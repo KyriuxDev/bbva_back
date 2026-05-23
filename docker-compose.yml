@@ -1,0 +1,42 @@
+services:
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: bbva_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER:     postgres
+      POSTGRES_PASSWORD: oaxaca.21
+      POSTGRES_DB:       bbva_v2
+    ports:
+      - "5433:5432"
+    volumes:
+      - bbva_pgdata:/var/lib/postgresql/data
+      - ./docker/init:/docker-entrypoint-initdb.d   # carga el SQL al primer arranque
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d bbva_v2"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  api:
+    build: .
+    container_name: bbva_api
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DATABASE_URL:    postgresql://postgres:oaxaca.21@postgres:5432/bbva_v2
+      JWT_SECRET:      bbva_jwt_secret_2025_oaxaca
+      JWT_EXPIRES_IN:  8h
+      PORT:            3000
+      NODE_ENV:        production
+      APP_NAME:        BBVA Dashboard API
+      APP_DESCRIPTION: API de KPIs y reportes
+      APP_VERSION:     1.0.0
+    ports:
+      - "3000:3000"
+
+volumes:
+  bbva_pgdata:

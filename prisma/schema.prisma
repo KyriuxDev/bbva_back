@@ -1,0 +1,290 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ─── AUTH ────────────────────────────────────────────────────────────────────
+
+model Admin {
+  id        Int      @id @default(autoincrement())
+  email     String   @unique @db.VarChar(100)
+  password  String   @db.VarChar(255)
+  nombre    String   @db.VarChar(100)
+  isActive  Boolean  @default(true) @map("is_active")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("admins")
+}
+
+// ─── ENTIDAD CENTRAL ─────────────────────────────────────────────────────────
+
+model Cliente {
+  idCliente       String    @id @map("id_cliente") @db.VarChar(10)
+  nombre          String    @db.VarChar(50)
+  apellidoPaterno String    @map("apellido_paterno") @db.VarChar(50)
+  apellidoMaterno String?   @map("apellido_materno") @db.VarChar(50)
+  genero          String?   @db.VarChar(10)
+  rfc             String?   @db.VarChar(13)
+  curp            String?   @db.VarChar(18)
+  fechaNacimiento DateTime? @map("fecha_nacimiento") @db.Date
+  nacionalidad    String?   @db.VarChar(30)
+  estadoCivil     String?   @map("estado_civil") @db.VarChar(20)
+
+  // Relaciones 1:1
+  datosPersonales   DatosPersonales?
+  datosNegocio      DatosNegocio?
+  openData          OpenData?
+
+  // Relaciones 1:N
+  cuentas             Cuenta[]
+  transacciones       Transaccion[]
+  tarjetas            Tarjeta[]
+  prestamos           Prestamo[]
+  seguros             Seguro[]
+  financiaciones      Financiacion[]
+  cobros              Cobro[]
+  pagos               Pago[]
+  metasAhorro         MetaAhorro[]
+  notificaciones      Notificacion[]
+  auditoriasComisiones AuditoriaComision[]
+
+  @@map("clientes")
+}
+
+// ─── DATOS DE CLIENTE ────────────────────────────────────────────────────────
+
+model DatosPersonales {
+  idCliente        String   @id @map("id_cliente") @db.VarChar(10)
+  email            String?  @db.VarChar(100)
+  telefonoCelular  String?  @map("telefono_celular") @db.VarChar(10)
+  telefonoCasa     String?  @map("telefono_casa") @db.VarChar(10)
+  direccionCalle   String?  @map("direccion_calle") @db.VarChar(100)
+  colonia          String?  @db.VarChar(60)
+  ciudad           String?  @db.VarChar(60)
+  estado           String?  @db.VarChar(60)
+  codigoPostal     String?  @map("codigo_postal") @db.VarChar(5)
+  pais             String?  @default("México") @db.VarChar(30)
+  latitudHabitual  Decimal? @map("latitud_habitual") @db.Decimal(9, 6)
+  longitudHabitual Decimal? @map("longitud_habitual") @db.Decimal(9, 6)
+
+  cliente Cliente @relation(fields: [idCliente], references: [idCliente])
+
+  @@map("datos_personales")
+}
+
+model DatosNegocio {
+  idCliente       String   @id @map("id_cliente") @db.VarChar(10)
+  razonSocial     String?  @map("razon_social") @db.VarChar(100)
+  rfcNegocio      String?  @map("rfc_negocio") @db.VarChar(13)
+  giroNegocio     String?  @map("giro_negocio") @db.VarChar(50)
+  ingresosAnuales Decimal? @map("ingresos_anuales") @db.Decimal(18, 2)
+  numEmpleados    Int?     @map("num_empleados")
+  pagaNominaBbva  Boolean? @default(false) @map("paga_nomina_bbva")
+
+  cliente Cliente @relation(fields: [idCliente], references: [idCliente])
+
+  @@map("datos_negocio")
+}
+
+model OpenData {
+  idCliente        String  @id @map("id_cliente") @db.VarChar(10)
+  segmentoCliente  String? @map("segmento_cliente") @db.VarChar(20)
+  nivelRiesgo      String? @map("nivel_riesgo") @db.VarChar(10)
+  scoreCrediticio  Int?    @map("score_crediticio") @db.SmallInt
+  productoEstrella String? @map("producto_estrella") @db.VarChar(30)
+
+  cliente Cliente @relation(fields: [idCliente], references: [idCliente])
+
+  @@map("open_data")
+}
+
+// ─── PRODUCTOS FINANCIEROS ───────────────────────────────────────────────────
+
+model Cuenta {
+  numCuenta        String    @id @map("num_cuenta") @db.VarChar(18)
+  idCliente        String    @map("id_cliente") @db.VarChar(10)
+  tipoCuenta       String?   @map("tipo_cuenta") @db.VarChar(20)
+  clabe            String?   @db.VarChar(18)
+  moneda           String?   @default("MXN") @db.VarChar(3)
+  saldo            Decimal?  @db.Decimal(15, 2)
+  fechaApertura    DateTime? @map("fecha_apertura") @db.Date
+  fechaCancelacion DateTime? @map("fecha_cancelacion") @db.Date
+  estatus          String?   @db.VarChar(15)
+  sucursal         String?   @db.VarChar(10)
+
+  cliente       Cliente       @relation(fields: [idCliente], references: [idCliente])
+  transacciones Transaccion[]
+
+  @@map("cuentas")
+}
+
+model Transaccion {
+  idTransaccion     String   @id @map("id_transaccion") @db.VarChar(12)
+  idCliente         String   @map("id_cliente") @db.VarChar(10)
+  numCuenta         String?  @map("num_cuenta") @db.VarChar(18)
+  fecha             DateTime
+  monto             Decimal? @db.Decimal(12, 2)
+  tipo              String?  @db.VarChar(20)
+  categoria         String?  @db.VarChar(30)
+  comercio          String?  @db.VarChar(60)
+  canal             String?  @db.VarChar(20)
+  latitud           Decimal? @db.Decimal(9, 6)
+  longitud          Decimal? @db.Decimal(9, 6)
+  esFraudePotencial Boolean? @default(false) @map("es_fraude_potencial")
+
+  cliente Cuenta?  @relation(fields: [numCuenta], references: [numCuenta])
+  cuenta  Cliente  @relation(fields: [idCliente], references: [idCliente])
+
+  @@map("transacciones")
+}
+
+model Tarjeta {
+  numTarjeta       String    @id @map("num_tarjeta") @db.VarChar(16)
+  idCliente        String    @map("id_cliente") @db.VarChar(10)
+  tipoTarjeta      String?   @map("tipo_tarjeta") @db.VarChar(30)
+  limiteCredito    Decimal?  @map("limite_credito") @db.Decimal(12, 2)
+  saldoTarjeta     Decimal?  @map("saldo_tarjeta") @db.Decimal(12, 2)
+  fechaVencimiento String?   @map("fecha_vencimiento") @db.VarChar(7)
+  estatusTarjeta   String?   @map("estatus_tarjeta") @db.VarChar(15)
+  fechaCancelacion DateTime? @map("fecha_cancelacion") @db.Date
+  fechaUltimoPago  DateTime? @map("fecha_ultimo_pago") @db.Date
+  fechaLimitePago  DateTime? @map("fecha_limite_pago") @db.Date
+
+  cliente Cliente @relation(fields: [idCliente], references: [idCliente])
+
+  @@map("tarjetas")
+}
+
+model Prestamo {
+  idPrestamo        String    @id @map("id_prestamo") @db.VarChar(10)
+  idCliente         String    @map("id_cliente") @db.VarChar(10)
+  tipoPrestamo      String?   @map("tipo_prestamo") @db.VarChar(20)
+  montoPrestamo     Decimal?  @map("monto_prestamo") @db.Decimal(15, 2)
+  tasaPrestamo      Decimal?  @map("tasa_prestamo") @db.Decimal(5, 2)
+  plazoMeses        Int?      @map("plazo_meses") @db.SmallInt
+  saldoPrestamo     Decimal?  @map("saldo_prestamo") @db.Decimal(15, 2)
+  fechaOtorgamiento DateTime? @map("fecha_otorgamiento") @db.Date
+  estatusPrestamo   String?   @map("estatus_prestamo") @db.VarChar(20)
+  sucursal          String?   @db.VarChar(10)
+
+  cliente Cliente @relation(fields: [idCliente], references: [idCliente])
+
+  @@map("prestamos")
+}
+
+model Seguro {
+  numPoliza        String    @id @map("num_poliza") @db.VarChar(10)
+  idCliente        String    @map("id_cliente") @db.VarChar(10)
+  tipoSeguro       String?   @map("tipo_seguro") @db.VarChar(20)
+  primaAnual       Decimal?  @map("prima_anual") @db.Decimal(10, 2)
+  fechaInicio      DateTime? @map("fecha_inicio") @db.Date
+  fechaVencimiento DateTime? @map("fecha_vencimiento") @db.Date
+  estatusSeguro    String?   @map("estatus_seguro") @db.VarChar(15)
+  fechaCancelacion DateTime? @map("fecha_cancelacion") @db.Date
+
+  cliente Cliente @relation(fields: [idCliente], references: [idCliente])
+
+  @@map("seguros")
+}
+
+model Financiacion {
+  idFinanciacion   Int       @id @default(autoincrement()) @map("id_financiacion")
+  idCliente        String    @map("id_cliente") @db.VarChar(10)
+  tipoFinanciacion String?   @map("tipo_financiacion") @db.VarChar(30)
+  montoFinanciado  Decimal?  @map("monto_financiado") @db.Decimal(15, 2)
+  tasaInteres      Decimal?  @map("tasa_interes") @db.Decimal(5, 2)
+  plazoMeses       Int?      @map("plazo_meses") @db.SmallInt
+  fechaInicio      DateTime? @map("fecha_inicio") @db.Date
+
+  cliente Cliente @relation(fields: [idCliente], references: [idCliente])
+
+  @@map("financiaciones")
+}
+
+// ─── OPERACIONES ─────────────────────────────────────────────────────────────
+
+model Cobro {
+  idCobro       String    @id @map("id_cobro") @db.VarChar(10)
+  idCliente     String    @map("id_cliente") @db.VarChar(10)
+  fechaCobro    DateTime? @map("fecha_cobro") @db.Date
+  montoCobro    Decimal?  @map("monto_cobro") @db.Decimal(10, 2)
+  tipoCobro     String?   @map("tipo_cobro") @db.VarChar(40)
+  conceptoCobro String?   @map("concepto_cobro") @db.VarChar(60)
+  estatusCobro  String?   @map("estatus_cobro") @db.VarChar(15)
+  limiteLegal   Decimal?  @map("limite_legal") @db.Decimal(10, 2)
+  excedeLimite  Boolean?  @default(false) @map("excede_limite")
+
+  cliente    Cliente            @relation(fields: [idCliente], references: [idCliente])
+  auditorias AuditoriaComision[]
+
+  @@map("cobros")
+}
+
+model Pago {
+  idPago         String    @id @map("id_pago") @db.VarChar(10)
+  idCliente      String    @map("id_cliente") @db.VarChar(10)
+  fechaPago      DateTime? @map("fecha_pago") @db.Date
+  montoPago      Decimal?  @map("monto_pago") @db.Decimal(12, 2)
+  tipoPago       String?   @map("tipo_pago") @db.VarChar(30)
+  conceptoPago   String?   @map("concepto_pago") @db.VarChar(60)
+  estatusPago    String?   @map("estatus_pago") @db.VarChar(20)
+  bancoDestino   String?   @map("banco_destino") @db.VarChar(30)
+  cuentaDestino  String?   @map("cuenta_destino") @db.VarChar(18)
+  referenciaPago String?   @map("referencia_pago") @db.VarChar(20)
+  canalPago      String?   @map("canal_pago") @db.VarChar(30)
+
+  cliente Cliente @relation(fields: [idCliente], references: [idCliente])
+
+  @@map("pagos")
+}
+
+// ─── OTROS ───────────────────────────────────────────────────────────────────
+
+model MetaAhorro {
+  idMeta        String    @id @map("id_meta") @db.VarChar(10)
+  idCliente     String    @map("id_cliente") @db.VarChar(10)
+  nombreMeta    String?   @map("nombre_meta") @db.VarChar(60)
+  montoObjetivo Decimal?  @map("monto_objetivo") @db.Decimal(12, 2)
+  montoActual   Decimal?  @default(0) @map("monto_actual") @db.Decimal(12, 2)
+  fechaInicio   DateTime? @map("fecha_inicio") @db.Date
+  fechaObjetivo DateTime? @map("fecha_objetivo") @db.Date
+  estatus       String?   @db.VarChar(15)
+
+  cliente Cliente @relation(fields: [idCliente], references: [idCliente])
+
+  @@map("metas_ahorro")
+}
+
+model Notificacion {
+  idNotificacion      String    @id @map("id_notificacion") @db.VarChar(10)
+  idCliente           String    @map("id_cliente") @db.VarChar(10)
+  fechaNotificacion   DateTime? @map("fecha_notificacion") @db.Date
+  tipoNotificacion    String?   @map("tipo_notificacion") @db.VarChar(40)
+  canalNotificacion   String?   @map("canal_notificacion") @db.VarChar(30)
+  estatusNotificacion String?   @map("estatus_notificacion") @db.VarChar(20)
+  mensajeNotificacion String?   @map("mensaje_notificacion") @db.VarChar(200)
+
+  cliente Cliente @relation(fields: [idCliente], references: [idCliente])
+
+  @@map("notificaciones")
+}
+
+model AuditoriaComision {
+  idAuditoria    Int       @id @default(autoincrement()) @map("id_auditoria")
+  idCobro        String?   @map("id_cobro") @db.VarChar(10)
+  idCliente      String    @map("id_cliente") @db.VarChar(10)
+  fechaAuditoria DateTime? @map("fecha_auditoria") @db.Date
+  tipoComision   String?   @map("tipo_comision") @db.VarChar(40)
+  montoCobrado   Decimal?  @map("monto_cobrado") @db.Decimal(10, 2)
+  limiteLegal    Decimal?  @map("limite_legal") @db.Decimal(10, 2)
+  diferencia     Decimal?  @db.Decimal(10, 2)
+  resultado      String?   @db.VarChar(20)
+
+  cliente Cliente @relation(fields: [idCliente], references: [idCliente])
+  cobro   Cobro?  @relation(fields: [idCobro], references: [idCobro])
+
+  @@map("auditoria_comisiones")
+}

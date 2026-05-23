@@ -1,0 +1,18 @@
+# Dependencias
+node_modules/
+
+# Build
+dist/
+
+# Variables de entorno — NUNCA subir
+.env
+
+# Docker init — el SQL tiene datos reales, no va al repo
+docker/init/*.sql
+
+# Prisma generado
+generated/
+
+# OS
+.DS_Store
+*.log
