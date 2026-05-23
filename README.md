@@ -167,7 +167,7 @@ bbva/
 ### 1. Clonar el repositorio
 
 ```bash
-git clone https://github.com/KyriuxDev/bbva_back.git
+git clone https://github.com/KyriuxDev/bbva_back.git bbva-backend
 cd bbva-backend
 ```
 
