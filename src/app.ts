@@ -12,6 +12,7 @@ import { kpisRouter }          from './kpis/kpis.router';
 import { clientesRouter }      from './clientes/clientes.router';
 import { transaccionesRouter } from './transacciones/transacciones.router';
 import { reportesRouter }      from './reportes/reportes.router';
+import { etlRouter }           from './etl/etl.router';
 
 // Middleware
 import { errorMiddleware } from './middleware/error.middleware';
@@ -46,6 +47,7 @@ const swaggerSpec = swaggerJsdoc({
       { name: 'Clientes',      description: 'Gestión y consulta de clientes' },
       { name: 'Transacciones', description: 'Historial de transacciones' },
       { name: 'Reportes',      description: 'Generación de reportes PDF' },
+      { name: 'ETL',           description: 'Datos analíticos de fraude — pipeline Python' },
     ],
   },
   apis: ['./src/**/*.router.ts'],
@@ -59,6 +61,7 @@ app.use('/api/v1/kpis',          kpisRouter);
 app.use('/api/v1/clientes',      clientesRouter);
 app.use('/api/v1/transacciones', transaccionesRouter);
 app.use('/api/v1/reportes',      reportesRouter);
+app.use('/api/v1/etl',          etlRouter);
 
 // ── Error handler global (debe ir al final) ────────────────────────────────────
 app.use(errorMiddleware);

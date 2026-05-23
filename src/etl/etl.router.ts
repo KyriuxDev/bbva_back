@@ -1,0 +1,96 @@
+import { Router } from 'express';
+import { etlService } from './etl.service';
+import { authMiddleware } from '../middleware/auth.middleware';
+
+export const etlRouter = Router();
+
+etlRouter.use(authMiddleware);
+
+/**
+ * @swagger
+ * tags:
+ *   name: ETL
+ *   description: Datos analíticos del pipeline ETL — Detección de Fraude
+ */
+
+/**
+ * @swagger
+ * /etl/resumen:
+ *   get:
+ *     summary: Resumen general del análisis de fraude
+ *     tags: [ETL]
+ *     security: [{ bearerAuth: [] }]
+ *     responses:
+ *       200:
+ *         description: Totales, tasa de fraude y montos
+ */
+etlRouter.get('/resumen', async (req, res, next) => {
+  try {
+    res.json(await etlService.getResumen());
+  } catch (e) { next(e); }
+});
+
+/**
+ * @swagger
+ * /etl/fraude-por-categoria:
+ *   get:
+ *     summary: Fraude agrupado por categoría de transacción
+ *     tags: [ETL]
+ *     security: [{ bearerAuth: [] }]
+ */
+etlRouter.get('/fraude-por-categoria', async (req, res, next) => {
+  try {
+    res.json(await etlService.getFraudePorCategoria());
+  } catch (e) { next(e); }
+});
+
+/**
+ * @swagger
+ * /etl/fraude-por-canal:
+ *   get:
+ *     summary: Fraude agrupado por canal (App, Cajero, Web, Sucursal)
+ *     tags: [ETL]
+ *     security: [{ bearerAuth: [] }]
+ */
+etlRouter.get('/fraude-por-canal', async (req, res, next) => {
+  try {
+    res.json(await etlService.getFraudePorCanal());
+  } catch (e) { next(e); }
+});
+
+/**
+ * @swagger
+ * /etl/fraude-por-mes:
+ *   get:
+ *     summary: Tendencia mensual de fraude (36 meses)
+ *     tags: [ETL]
+ *     security: [{ bearerAuth: [] }]
+ */
+etlRouter.get('/fraude-por-mes', async (req, res, next) => {
+  try {
+    res.json(await etlService.getFraudePorMes());
+  } catch (e) { next(e); }
+});
+
+/**
+ * @swagger
+ * /etl/alertas-fraude:
+ *   get:
+ *     summary: Lista paginada de alertas de fraude enriquecidas
+ *     tags: [ETL]
+ *     security: [{ bearerAuth: [] }]
+ *     parameters:
+ *       - in: query
+ *         name: page
+ *         schema: { type: integer, default: 1 }
+ *       - in: query
+ *         name: limit
+ *         schema: { type: integer, default: 20 }
+ */
+etlRouter.get('/alertas-fraude', async (req, res, next) => {
+  try {
+    const page  = Math.max(1, parseInt(req.query.page  as string) || 1);
+    const limit = Math.min(100, parseInt(req.query.limit as string) || 20);
+    res.json(await etlService.getAlertasFraude(page, limit));
+  } catch (e) { next(e); }
+});
