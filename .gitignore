@@ -13,6 +13,9 @@ docker/init/*.sql
 # Prisma generado
 generated/
 
+# Graphify — análisis local del grafo de conocimiento
+graphify-out/
+
 # OS
 .DS_Store
 *.log
