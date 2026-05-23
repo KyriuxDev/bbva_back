@@ -24,8 +24,18 @@ export const kpisRepository = {
       prisma.cuenta.aggregate({ _sum: { saldo: true }, where: { estatus: 'Activa' } }),
       prisma.prestamo.count({ where: { estatusPrestamo: 'Vigente' } }),
       prisma.prestamo.aggregate({ _sum: { saldoPrestamo: true }, where: { estatusPrestamo: 'Vigente' } }),
+      // Busca el día más reciente con transacciones en los datos históricos
       prisma.transaccion.count({
-        where: { fecha: { gte: new Date(new Date().setHours(0, 0, 0, 0)) } },
+        where: {
+          fecha: {
+            gte: await prisma.transaccion
+              .findFirst({ orderBy: { fecha: 'desc' }, select: { fecha: true } })
+              .then(t => {
+                const d = t?.fecha ?? new Date();
+                return new Date(d.getFullYear(), d.getMonth(), d.getDate());
+              }),
+          },
+        },
       }),
       prisma.transaccion.count({ where: { esFraudePotencial: true } }),
       prisma.cobro.count({ where: { excedeLimite: true } }),

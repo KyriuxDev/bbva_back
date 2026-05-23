@@ -16,9 +16,12 @@ export const transaccionesRepository = {
     const skip = (page - 1) * limit;
 
     const where = {
-      ...(desde    && { fecha: { gte: new Date(desde) } }),
-      ...(hasta    && { fecha: { lte: new Date(hasta) } }),
-      ...(desde && hasta && { fecha: { gte: new Date(desde), lte: new Date(hasta) } }),
+      ...((desde || hasta) && {
+        fecha: {
+          ...(desde && { gte: new Date(desde) }),
+          ...(hasta && { lte: new Date(hasta) }),
+        },
+      }),
       ...(categoria        && { categoria }),
       ...(canal            && { canal }),
       ...(fraude !== undefined && { esFraudePotencial: fraude }),
