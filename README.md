@@ -27,6 +27,7 @@ Antes de levantar el proyecto necesitas dos archivos que **no están en el repos
 ```
 01_bbva.sql      ← dump completo de la BD (estructura + 1M de registros)
 02_admins.sql    ← tabla de administradores
+03_dwh.sql       ← schema dwh con tablas analíticas del ETL (fraude)
 ```
 
 Una vez que los tengas, colócalos exactamente aquí:
@@ -36,7 +37,8 @@ bbva-backend/
 └── docker/
     └── init/
         ├── 01_bbva.sql     ← aquí
-        └── 02_admins.sql   ← aquí
+        ├── 02_admins.sql   ← aquí
+        └── 03_dwh.sql      ← aquí
 ```
 
 > Sin estos archivos el contenedor de PostgreSQL arranca vacío y el seed fallará.
@@ -155,6 +157,17 @@ bbva/
 | Método | Ruta | Descripción |
 |--------|------|-------------|
 | GET | `/api/v1/reportes/kpis` | Descarga PDF con KPIs + debilidades + soluciones |
+
+### ETL — Análisis de Fraude *(requieren JWT)*
+> Datos generados por el pipeline Python ETL y cargados en el schema `dwh`.
+
+| Método | Ruta | Descripción |
+|--------|------|-------------|
+| GET | `/api/v1/etl/resumen` | Resumen general: tasa de fraude, montos totales MXN y USD |
+| GET | `/api/v1/etl/fraude-por-categoria` | Fraude agrupado por categoría de transacción |
+| GET | `/api/v1/etl/fraude-por-canal` | Fraude por canal (App, Cajero, POS, Web, Ventanilla) |
+| GET | `/api/v1/etl/fraude-por-mes` | Tendencia mensual de fraude (36 meses) |
+| GET | `/api/v1/etl/alertas-fraude` | Lista paginada de alertas — parámetros: `page`, `limit` |
 
 ---
 
