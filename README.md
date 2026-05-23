@@ -173,7 +173,7 @@ cd bbva-backend
 
 ### 2. Colocar los archivos SQL
 
-Solicita al encargado los archivos `01_bbva.sql` y `02_admins.sql` y colócalos en:
+Los archivos `01_bbva.sql` y `02_admins.sql` y colócalos en:
 
 ```bash
 docker/init/01_bbva.sql
