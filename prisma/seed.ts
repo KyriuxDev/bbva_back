@@ -5,8 +5,10 @@ import { prisma } from '../src/prisma';
 async function main() {
   const passwordHash = await bcrypt.hash('Admin123!', 10);
 
-  const admin = await prisma.admin.create({
-    data: {
+  const admin = await prisma.admin.upsert({
+    where:  { email: 'admin@bbva.com' },
+    update: {},                          // ya existe → no tocar nada
+    create: {
       email:    'admin@bbva.com',
       password: passwordHash,
       nombre:   'Administrador BBVA',
@@ -14,16 +16,12 @@ async function main() {
     },
   });
 
-  console.log('✅ Admin creado:', admin.email);
+  console.log('✅ Admin listo:', admin.email);
 }
 
 main()
   .catch((e) => {
-    if (e.code === 'P2002') {
-      console.log('ℹ️  Admin ya existe, omitiendo...');
-    } else {
-      console.error(e);
-      process.exit(1);
-    }
+    console.error(e);
+    process.exit(1);
   })
   .finally(() => prisma.$disconnect());
