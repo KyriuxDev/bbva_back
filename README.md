@@ -22,7 +22,7 @@ Backend REST para el dashboard administrativo de análisis BBVA. Construido con 
 
 ## Archivos que necesitas recibir del equipo
 
-Antes de levantar el proyecto necesitas dos archivos que **no están en el repositorio** por su tamaño. Pídelos al encargado del proyecto:
+Antes de levantar el proyecto necesitas dos archivos que **no están en el repositorio** por su tamaño.
 
 ```
 01_bbva.sql      ← dump completo de la BD (estructura + 1M de registros)
