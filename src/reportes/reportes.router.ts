@@ -23,5 +23,12 @@ reportesRouter.use(authMiddleware);
  *               format: binary
  */
 reportesRouter.get('/kpis', async (req: Request, res: Response) => {
-  await reportesService.generarReporteKPIs(res);
+  const opciones = {
+    kpis:           req.query.kpis           !== 'false',
+    fraude:         req.query.fraude         !== 'false',
+    debilidades:    req.query.debilidades    !== 'false',
+    recomendaciones:req.query.recomendaciones !== 'false',
+    graficas:       req.query.graficas       !== 'false',
+  };
+  await reportesService.generarReporteKPIs(res, opciones);
 });
