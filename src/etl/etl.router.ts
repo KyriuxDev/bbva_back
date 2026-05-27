@@ -15,7 +15,7 @@ etlRouter.use(authMiddleware);
 
 /**
  * @swagger
- * /etl/resumen:
+ * /api/v1/etl/resumen:
  *   get:
  *     summary: Resumen general del análisis de fraude
  *     tags: [ETL]
@@ -32,7 +32,7 @@ etlRouter.get('/resumen', async (req, res, next) => {
 
 /**
  * @swagger
- * /etl/fraude-por-categoria:
+ * /api/v1/etl/fraude-por-categoria:
  *   get:
  *     summary: Fraude agrupado por categoría de transacción
  *     tags: [ETL]
@@ -46,7 +46,7 @@ etlRouter.get('/fraude-por-categoria', async (req, res, next) => {
 
 /**
  * @swagger
- * /etl/fraude-por-canal:
+ * /api/v1/etl/fraude-por-canal:
  *   get:
  *     summary: Fraude agrupado por canal (App, Cajero, Web, Sucursal)
  *     tags: [ETL]
@@ -60,7 +60,7 @@ etlRouter.get('/fraude-por-canal', async (req, res, next) => {
 
 /**
  * @swagger
- * /etl/fraude-por-mes:
+ * /api/v1/etl/fraude-por-mes:
  *   get:
  *     summary: Tendencia mensual de fraude (36 meses)
  *     tags: [ETL]
@@ -74,7 +74,7 @@ etlRouter.get('/fraude-por-mes', async (req, res, next) => {
 
 /**
  * @swagger
- * /etl/alertas-fraude:
+ * /api/v1/etl/alertas-fraude:
  *   get:
  *     summary: Lista paginada de alertas de fraude enriquecidas
  *     tags: [ETL]
@@ -87,9 +87,17 @@ etlRouter.get('/fraude-por-mes', async (req, res, next) => {
  *         name: limit
  *         schema: { type: integer, default: 20 }
  */
+etlRouter.get('/alertas-fraude', async (req, res, next) => {
+  try {
+    const page  = Math.max(1, parseInt(req.query.page  as string) || 1);
+    const limit = Math.min(100, parseInt(req.query.limit as string) || 20);
+    res.json(await etlService.getAlertasFraude(page, limit));
+  } catch (e) { next(e); }
+});
+
 /**
  * @swagger
- * /etl/fraude-geografico:
+ * /api/v1/etl/fraude-geografico:
  *   get:
  *     summary: Clusters de fraude agrupados por coordenada geográfica
  *     tags: [ETL]
@@ -102,7 +110,7 @@ etlRouter.get('/fraude-geografico', async (_req, res, next) => {
 
 /**
  * @swagger
- * /etl/fraude-por-comercio:
+ * /api/v1/etl/fraude-por-comercio:
  *   get:
  *     summary: Top 20 comercios con mayor número de fraudes detectados
  *     tags: [ETL]
@@ -113,10 +121,3 @@ etlRouter.get('/fraude-por-comercio', async (_req, res, next) => {
   catch (e) { next(e); }
 });
 
-etlRouter.get('/alertas-fraude', async (req, res, next) => {
-  try {
-    const page  = Math.max(1, parseInt(req.query.page  as string) || 1);
-    const limit = Math.min(100, parseInt(req.query.limit as string) || 20);
-    res.json(await etlService.getAlertasFraude(page, limit));
-  } catch (e) { next(e); }
-});
