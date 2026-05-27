@@ -23,6 +23,45 @@ export const etlRepository = {
       SELECT * FROM dwh.fraude_por_mes ORDER BY año_mes ASC
     `,
 
+  // Fraude agrupado por coordenada (clusters redondeados a 1 decimal)
+  fraudeGeografico: () =>
+    prisma.$queryRaw<any[]>`
+      SELECT
+        ROUND(latitud::numeric, 1)::float    AS lat,
+        ROUND(longitud::numeric, 1)::float   AS lng,
+        COUNT(*)::int                         AS total_fraudes,
+        SUM(monto)::float                     AS monto_total,
+        AVG(monto)::float                     AS monto_promedio,
+        MODE() WITHIN GROUP (ORDER BY categoria) AS categoria_top,
+        MODE() WITHIN GROUP (ORDER BY canal)     AS canal_top
+      FROM transacciones
+      WHERE es_fraude_potencial = true
+        AND latitud  IS NOT NULL
+        AND longitud IS NOT NULL
+      GROUP BY ROUND(latitud::numeric, 1), ROUND(longitud::numeric, 1)
+      ORDER BY total_fraudes DESC
+      LIMIT 200
+    `,
+
+  // Top comercios con fraude + clientes afectados
+  fraudePorComercio: () =>
+    prisma.$queryRaw<any[]>`
+      SELECT
+        comercio,
+        categoria,
+        COUNT(*)::int                       AS total_fraudes,
+        SUM(monto)::float                   AS monto_total,
+        AVG(monto)::float                   AS monto_promedio,
+        COUNT(DISTINCT id_cliente)::int     AS clientes_afectados,
+        MAX(fecha)                          AS ultima_alerta
+      FROM transacciones
+      WHERE es_fraude_potencial = true
+        AND comercio IS NOT NULL
+      GROUP BY comercio, categoria
+      ORDER BY total_fraudes DESC
+      LIMIT 20
+    `,
+
   alertasFraude: (page: number, limit: number) => {
     const offset = (page - 1) * limit;
     return Promise.all([

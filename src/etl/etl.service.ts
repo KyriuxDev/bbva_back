@@ -7,7 +7,9 @@ export const etlService = {
   getResumen:           async () => serialize((await etlRepository.resumenGeneral())[0]),
   getFraudePorCategoria: async () => serialize(await etlRepository.fraudePorCategoria()),
   getFraudePorCanal:    async () => serialize(await etlRepository.fraudePorCanal()),
-  getFraudePorMes:      async () => serialize(await etlRepository.fraudePorMes()),
+  getFraudePorMes:       async () => serialize(await etlRepository.fraudePorMes()),
+  getFraudeGeografico:   async () => serialize(await etlRepository.fraudeGeografico()),
+  getFraudePorComercio:  async () => serialize(await etlRepository.fraudePorComercio()),
 
   getAlertasFraude: async (page: number, limit: number) => {
     const [data, countResult] = await etlRepository.alertasFraude(page, limit);

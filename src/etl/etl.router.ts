@@ -87,6 +87,32 @@ etlRouter.get('/fraude-por-mes', async (req, res, next) => {
  *         name: limit
  *         schema: { type: integer, default: 20 }
  */
+/**
+ * @swagger
+ * /etl/fraude-geografico:
+ *   get:
+ *     summary: Clusters de fraude agrupados por coordenada geográfica
+ *     tags: [ETL]
+ *     security: [{ bearerAuth: [] }]
+ */
+etlRouter.get('/fraude-geografico', async (_req, res, next) => {
+  try { res.json(await etlService.getFraudeGeografico()); }
+  catch (e) { next(e); }
+});
+
+/**
+ * @swagger
+ * /etl/fraude-por-comercio:
+ *   get:
+ *     summary: Top 20 comercios con mayor número de fraudes detectados
+ *     tags: [ETL]
+ *     security: [{ bearerAuth: [] }]
+ */
+etlRouter.get('/fraude-por-comercio', async (_req, res, next) => {
+  try { res.json(await etlService.getFraudePorComercio()); }
+  catch (e) { next(e); }
+});
+
 etlRouter.get('/alertas-fraude', async (req, res, next) => {
   try {
     const page  = Math.max(1, parseInt(req.query.page  as string) || 1);

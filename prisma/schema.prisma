@@ -138,6 +138,8 @@ model Transaccion {
   cliente Cuenta?  @relation(fields: [numCuenta], references: [numCuenta])
   cuenta  Cliente  @relation(fields: [idCliente], references: [idCliente])
 
+  @@index([fecha])
+  @@index([esFraudePotencial])
   @@map("transacciones")
 }
 
