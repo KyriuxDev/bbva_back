@@ -135,4 +135,41 @@ export const kpisService = {
     }
     return serialize(row);
   },
+
+  // Tarjetas de crédito
+  getUtilizacionCredito: async () =>
+    serialize(await kpisRepository.utilizacionCredito()),
+ 
+  getUtilizacionCreditoResumen: async () => {
+    const rows = await kpisRepository.utilizacionCreditoResumen();
+    const row  = rows[0];
+    if (!row) return { utilizacion_global: 0, total_tarjetas: 0, saldo_total: 0, limite_total: 0 };
+    return serialize(row);
+  },
+ 
+  getMorosidadTarjetas: async () =>
+    serialize(await kpisRepository.morosidadTarjetas()),
+ 
+  getMorosidadTarjetasResumen: async () => {
+    const rows = await kpisRepository.morosidadTarjetasResumen();
+    const row  = rows[0];
+    if (!row) return { total_activas: 0, total_morosas: 0, tasa_morosidad: 0 };
+    return serialize(row);
+  },
+ 
+  // Préstamos
+  getTasaInteresPrestamos: async () =>
+    serialize(await kpisRepository.tasaInteresPrestamos()),
+ 
+  // Metas de ahorro
+  getMetasAhorroPorEstatus: async () =>
+    serialize(await kpisRepository.metasAhorroPorEstatus()),
+ 
+  getMetasAhorroProgreso: async () => {
+    const rows = await kpisRepository.metasAhorroProgreso();
+    const row  = rows[0];
+    if (!row) return { progreso_promedio: 0, total_activas: 0, monto_objetivo_total: 0, monto_actual_total: 0 };
+    return serialize(row);
+  },
+ 
 };

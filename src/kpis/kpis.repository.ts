@@ -170,8 +170,14 @@ export const kpisRepository = {
         SELECT ROUND(100.0 * COUNT(*) FILTER (WHERE estatus = 'Cancelada') / COUNT(*), 2) AS pct
         FROM cuentas
       `,
+      // CORREGIDO: usar 'Vencido' (ya correcto) sobre el total de préstamos activos
+      // (excluye Liquidado porque un préstamo liquidado es exitoso, no problemático)
       prisma.$queryRaw<[{ pct: number }]>`
-        SELECT ROUND(100.0 * COUNT(*) FILTER (WHERE estatus_prestamo = 'Vencido') / COUNT(*), 2) AS pct
+        SELECT ROUND(
+          100.0 * COUNT(*) FILTER (WHERE estatus_prestamo = 'Vencido') /
+          NULLIF(COUNT(*) FILTER (WHERE estatus_prestamo != 'Liquidado'), 0),
+          2
+        ) AS pct
         FROM prestamos
       `,
       prisma.$queryRaw<[{ pct: number }]>`
@@ -179,7 +185,7 @@ export const kpisRepository = {
         FROM metas_ahorro
       `,
     ]);
-
+ 
     return {
       porcentajeFraudePotencial:   Number(fraude[0]?.pct           ?? 0),
       porcentajeCobrosExcedidos:   Number(cobros[0]?.pct           ?? 0),
@@ -326,4 +332,201 @@ export const kpisRepository = {
         )::float                                                                          AS porcentaje_penetracion
       FROM datos_negocio
     `,
+
+  // ── Tarjetas de crédito ───────────────────────────────────────────────────
+ 
+  /**
+   * KPI: Utilización promedio del crédito
+   * Fuente: tarjetas.saldo_tarjeta / limite_credito
+   * Devuelve el porcentaje promedio de uso del límite, agrupado por tipo de tarjeta.
+   * Solo considera tarjetas activas con límite > 0.
+   */
+  utilizacionCredito: (): Promise<{
+    tipo_tarjeta:          string;
+    total_tarjetas:        bigint;
+    utilizacion_promedio:  number;   // % promedio saldo/límite
+    saldo_total:           number;
+    limite_total:          number;
+  }[]> =>
+    prisma.$queryRaw`
+      SELECT
+        tipo_tarjeta,
+        COUNT(*)::int                                                           AS total_tarjetas,
+        ROUND(
+          100.0 * AVG(
+            CASE
+              WHEN limite_credito > 0 THEN saldo_tarjeta / limite_credito
+              ELSE NULL
+            END
+          )::numeric,
+          2
+        )::float                                                                AS utilizacion_promedio,
+        ROUND(SUM(saldo_tarjeta)::numeric, 2)::float                           AS saldo_total,
+        ROUND(SUM(limite_credito)::numeric, 2)::float                          AS limite_total
+      FROM tarjetas
+      WHERE estatus_tarjeta = 'Activa'
+        AND tipo_tarjeta    IS NOT NULL
+        AND limite_credito  > 0
+      GROUP BY tipo_tarjeta
+      ORDER BY utilizacion_promedio DESC
+    `,
+ 
+  /**
+   * Resumen global de utilización (para la tarjeta de header)
+   */
+  utilizacionCreditoResumen: (): Promise<{
+    utilizacion_global:   number;
+    total_tarjetas:       bigint;
+    saldo_total:          number;
+    limite_total:         number;
+  }[]> =>
+    prisma.$queryRaw`
+      SELECT
+        ROUND(
+          100.0 * SUM(saldo_tarjeta) / NULLIF(SUM(limite_credito), 0)::numeric,
+          2
+        )::float                                                               AS utilizacion_global,
+        COUNT(*)                                                               AS total_tarjetas,
+        ROUND(SUM(saldo_tarjeta)::numeric, 2)::float                          AS saldo_total,
+        ROUND(SUM(limite_credito)::numeric, 2)::float                         AS limite_total
+      FROM tarjetas
+      WHERE estatus_tarjeta = 'Activa'
+        AND limite_credito  > 0
+    `,
+ 
+  /**
+   * KPI: Tasa de morosidad en tarjetas
+   * Fuente: tarjetas.fecha_limite_pago vs fecha_ultimo_pago
+   * Una tarjeta es morosa si fecha_ultimo_pago > fecha_limite_pago
+   * O si fecha_limite_pago ya pasó y fecha_ultimo_pago es NULL.
+   * Devuelve totales y porcentajes por tipo de tarjeta.
+   */
+    morosidadTarjetas: (): Promise<{
+      tipo_tarjeta:   string;
+      total:          bigint;
+      morosas:        bigint;
+      al_corriente:   bigint;
+      tasa_morosidad: number;
+    }[]> =>
+      prisma.$queryRaw`
+        SELECT
+          tipo_tarjeta,
+          COUNT(*)                                                              AS total,
+          COUNT(*) FILTER (WHERE estatus_tarjeta = 'Bloqueada')                AS morosas,
+          COUNT(*) FILTER (WHERE estatus_tarjeta = 'Activa')                   AS al_corriente,
+          ROUND(
+            100.0 * COUNT(*) FILTER (WHERE estatus_tarjeta = 'Bloqueada')
+            / NULLIF(COUNT(*) FILTER (WHERE estatus_tarjeta IN ('Activa','Bloqueada')), 0)::numeric,
+            2
+          )::float                                                              AS tasa_morosidad
+        FROM tarjetas
+        WHERE tipo_tarjeta IS NOT NULL
+          AND estatus_tarjeta IN ('Activa', 'Bloqueada')
+        GROUP BY tipo_tarjeta
+        ORDER BY tasa_morosidad DESC
+      `,
+ 
+  /**
+   * Resumen global de morosidad (para la tarjeta de header)
+   */
+  morosidadTarjetasResumen: (): Promise<{
+    total_activas:  bigint;
+    total_morosas:  bigint;
+    tasa_morosidad: number;
+  }[]> =>
+    prisma.$queryRaw`
+      SELECT
+        COUNT(*) FILTER (WHERE estatus_tarjeta IN ('Activa','Bloqueada')) AS total_activas,
+        COUNT(*) FILTER (WHERE estatus_tarjeta = 'Bloqueada')             AS total_morosas,
+        ROUND(
+          100.0 * COUNT(*) FILTER (WHERE estatus_tarjeta = 'Bloqueada')
+          / NULLIF(COUNT(*) FILTER (WHERE estatus_tarjeta IN ('Activa','Bloqueada')), 0)::numeric,
+          2
+        )::float                                                           AS tasa_morosidad
+      FROM tarjetas
+    `,
+ 
+  // ── Préstamos ─────────────────────────────────────────────────────────────
+ 
+  /**
+   * KPI: Tasa de interés promedio en préstamos
+   * Fuente: prestamos.tasa_prestamo + tipo_prestamo
+   * Solo préstamos vigentes con tasa no nula.
+   */
+  tasaInteresPrestamos: (): Promise<{
+    tipo_prestamo: string;
+    total:         bigint;
+    tasa_promedio: number;
+    tasa_minima:   number;
+    tasa_maxima:   number;
+    monto_total:   number;
+  }[]> =>
+    prisma.$queryRaw`
+      SELECT
+        tipo_prestamo,
+        COUNT(*)                                                                AS total,
+        ROUND(AVG(tasa_prestamo)::numeric, 2)::float                           AS tasa_promedio,
+        ROUND(MIN(tasa_prestamo)::numeric, 2)::float                           AS tasa_minima,
+        ROUND(MAX(tasa_prestamo)::numeric, 2)::float                           AS tasa_maxima,
+        ROUND(SUM(monto_prestamo)::numeric, 2)::float                          AS monto_total
+      FROM prestamos
+      WHERE estatus_prestamo IN ('Al corriente', 'Vencido', 'En reestructura')
+        AND tipo_prestamo    IS NOT NULL
+        AND tasa_prestamo    IS NOT NULL
+      GROUP BY tipo_prestamo
+      ORDER BY tasa_promedio DESC
+    `,
+ 
+  // ── Metas de ahorro ───────────────────────────────────────────────────────
+ 
+  /**
+   * KPI: % metas de ahorro completadas (con desglose por estatus)
+   * Fuente: metas_ahorro.estatus
+   * Devuelve todos los estatus con sus totales y porcentajes.
+   */
+  metasAhorroPorEstatus: (): Promise<{
+    estatus:    string;
+    total:      bigint;
+    porcentaje: number;
+  }[]> =>
+    prisma.$queryRaw`
+      SELECT
+        estatus,
+        COUNT(*)                                                                AS total,
+        ROUND(100.0 * COUNT(*) / SUM(COUNT(*)) OVER ()::numeric, 2)::float     AS porcentaje
+      FROM metas_ahorro
+      WHERE estatus IS NOT NULL
+      GROUP BY estatus
+      ORDER BY total DESC
+    `,
+ 
+  /**
+   * Progreso promedio de metas activas (monto_actual / monto_objetivo)
+   * Útil para ver qué tan cerca están los clientes de completar sus metas.
+   */
+  metasAhorroProgreso: (): Promise<{
+    progreso_promedio:    number;  // % promedio de avance (0-100)
+    total_activas:        bigint;
+    monto_objetivo_total: number;
+    monto_actual_total:   number;
+  }[]> =>
+    prisma.$queryRaw`
+      SELECT
+        ROUND(
+          100.0 * AVG(
+            CASE
+              WHEN monto_objetivo > 0 THEN monto_actual / monto_objetivo
+              ELSE NULL
+            END
+          )::numeric,
+          2
+        )::float                                                                AS progreso_promedio,
+        COUNT(*)                                                                AS total_activas,
+        ROUND(SUM(monto_objetivo)::numeric, 2)::float                          AS monto_objetivo_total,
+        ROUND(SUM(monto_actual)::numeric, 2)::float                            AS monto_actual_total
+      FROM metas_ahorro
+      WHERE estatus IN ('Activa', 'En progreso')
+        AND monto_objetivo > 0
+    `,
+ 
 };

@@ -359,3 +359,152 @@ kpisRouter.get('/cuentas-por-sucursal', async (_req: Request, res: Response) => 
 kpisRouter.get('/nomina-resumen', async (_req: Request, res: Response) => {
   res.json(await kpisService.getNominaResumen());
 });
+
+// ── TARJETAS DE CRÉDITO ──────────────────────────────────────────────────────
+ 
+/**
+ * @swagger
+ * /api/v1/kpis/utilizacion-credito:
+ *   get:
+ *     summary: Utilización promedio del crédito por tipo de tarjeta
+ *     tags: [KPIs]
+ *     security:
+ *       - bearerAuth: []
+ *     description: |
+ *       Calcula el porcentaje promedio de uso del límite de crédito
+ *       (saldo_tarjeta / limite_credito × 100) para tarjetas activas,
+ *       agrupado por tipo de tarjeta.
+ *       Una utilización superior al 70% es señal de riesgo para la cartera.
+ *     responses:
+ *       200:
+ *         description: >
+ *           Array de { tipo_tarjeta, total_tarjetas, utilizacion_promedio,
+ *           saldo_total, limite_total }
+ */
+kpisRouter.get('/utilizacion-credito', async (_req: Request, res: Response) => {
+  res.json(await kpisService.getUtilizacionCredito());
+});
+ 
+/**
+ * @swagger
+ * /api/v1/kpis/utilizacion-credito/resumen:
+ *   get:
+ *     summary: Resumen global de utilización del crédito
+ *     tags: [KPIs]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: >
+ *           { utilizacion_global, total_tarjetas, saldo_total, limite_total }
+ */
+kpisRouter.get('/utilizacion-credito/resumen', async (_req: Request, res: Response) => {
+  res.json(await kpisService.getUtilizacionCreditoResumen());
+});
+ 
+/**
+ * @swagger
+ * /api/v1/kpis/morosidad-tarjetas:
+ *   get:
+ *     summary: Tasa de morosidad en tarjetas de crédito por tipo
+ *     tags: [KPIs]
+ *     security:
+ *       - bearerAuth: []
+ *     description: |
+ *       Una tarjeta es morosa cuando fecha_limite_pago < hoy
+ *       y (fecha_ultimo_pago IS NULL o fecha_ultimo_pago > fecha_limite_pago).
+ *       Agrupa por tipo de tarjeta con totales y tasa de morosidad.
+ *       Umbral de alerta recomendado: >5%.
+ *     responses:
+ *       200:
+ *         description: >
+ *           Array de { tipo_tarjeta, total, morosas, al_corriente, tasa_morosidad }
+ */
+kpisRouter.get('/morosidad-tarjetas', async (_req: Request, res: Response) => {
+  res.json(await kpisService.getMorosidadTarjetas());
+});
+ 
+/**
+ * @swagger
+ * /api/v1/kpis/morosidad-tarjetas/resumen:
+ *   get:
+ *     summary: Resumen global de morosidad en tarjetas
+ *     tags: [KPIs]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: "{ total_activas, total_morosas, tasa_morosidad }"
+ */
+kpisRouter.get('/morosidad-tarjetas/resumen', async (_req: Request, res: Response) => {
+  res.json(await kpisService.getMorosidadTarjetasResumen());
+});
+ 
+// ── PRÉSTAMOS ────────────────────────────────────────────────────────────────
+ 
+/**
+ * @swagger
+ * /api/v1/kpis/tasa-interes-prestamos:
+ *   get:
+ *     summary: Tasa de interés promedio en préstamos vigentes por tipo
+ *     tags: [KPIs]
+ *     security:
+ *       - bearerAuth: []
+ *     description: |
+ *       Calcula la tasa anual promedio, mínima y máxima para cada tipo de
+ *       préstamo vigente. Útil para comparar rentabilidad entre productos
+ *       y detectar tasas fuera de mercado (pricing).
+ *     responses:
+ *       200:
+ *         description: >
+ *           Array de { tipo_prestamo, total, tasa_promedio, tasa_minima,
+ *           tasa_maxima, monto_total }
+ */
+kpisRouter.get('/tasa-interes-prestamos', async (_req: Request, res: Response) => {
+  res.json(await kpisService.getTasaInteresPrestamos());
+});
+ 
+// ── METAS DE AHORRO ──────────────────────────────────────────────────────────
+ 
+/**
+ * @swagger
+ * /api/v1/kpis/metas-ahorro-por-estatus:
+ *   get:
+ *     summary: Distribución de metas de ahorro por estatus (completadas, activas, fallidas…)
+ *     tags: [KPIs]
+ *     security:
+ *       - bearerAuth: []
+ *     description: |
+ *       Muestra el desglose completo de metas de ahorro por estatus,
+ *       con totales y porcentajes. Complementa el indicador de debilidades
+ *       (porcentajeMetasFallidas) con visibilidad sobre metas completadas.
+ *     responses:
+ *       200:
+ *         description: Array de { estatus, total, porcentaje }
+ */
+kpisRouter.get('/metas-ahorro-por-estatus', async (_req: Request, res: Response) => {
+  res.json(await kpisService.getMetasAhorroPorEstatus());
+});
+ 
+/**
+ * @swagger
+ * /api/v1/kpis/metas-ahorro-progreso:
+ *   get:
+ *     summary: Progreso promedio de metas de ahorro activas
+ *     tags: [KPIs]
+ *     security:
+ *       - bearerAuth: []
+ *     description: |
+ *       Calcula el porcentaje promedio de avance (monto_actual / monto_objetivo)
+ *       para metas en estatus Activa o En progreso. Indica qué tan cerca están
+ *       los clientes de completar sus objetivos de ahorro.
+ *     responses:
+ *       200:
+ *         description: >
+ *           { progreso_promedio, total_activas, monto_objetivo_total,
+ *           monto_actual_total }
+ */
+kpisRouter.get('/metas-ahorro-progreso', async (_req: Request, res: Response) => {
+  res.json(await kpisService.getMetasAhorroProgreso());
+});
+ 
