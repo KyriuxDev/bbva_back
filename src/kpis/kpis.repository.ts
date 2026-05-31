@@ -300,7 +300,6 @@ export const kpisRepository = {
         COUNT(*) AS nuevas_cuentas
       FROM cuentas
       WHERE sucursal IS NOT NULL
-        AND fecha_apertura >= NOW() - INTERVAL '12 months'
       GROUP BY sucursal
       ORDER BY nuevas_cuentas DESC
       LIMIT 20

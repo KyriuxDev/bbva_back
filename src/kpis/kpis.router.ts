@@ -340,7 +340,7 @@ kpisRouter.get('/cuentas-por-sucursal', async (_req: Request, res: Response) => 
 
 /**
  * @swagger
- * /api/v1/kpis/nomina-bbva:
+ * /api/v1/kpis/nomina-resumen:
  *   get:
  *     summary: Penetración de nómina BBVA — % de empresas cliente que pagan nómina con BBVA
  *     tags: [KPIs]
@@ -356,6 +356,6 @@ kpisRouter.get('/cuentas-por-sucursal', async (_req: Request, res: Response) => 
  *         description: >
  *           { total_empresas, con_nomina_bbva, sin_nomina_bbva, porcentaje_penetracion }
  */
-kpisRouter.get('/nomina-bbva', async (_req: Request, res: Response) => {
+kpisRouter.get('/nomina-resumen', async (_req: Request, res: Response) => {
   res.json(await kpisService.getNominaResumen());
 });
