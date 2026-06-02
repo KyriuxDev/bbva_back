@@ -35,6 +35,9 @@ services:
       APP_NAME:        BBVA Dashboard API
       APP_DESCRIPTION: API de KPIs y reportes
       APP_VERSION:     1.0.0
+      OLLAMA_HOST:     http://host.docker.internal:11434
+    extra_hosts:
+      - "host.docker.internal:host-gateway" 
     ports:
       - "3000:3000"
 
