@@ -121,3 +121,11 @@ etlRouter.get('/fraude-por-comercio', async (_req, res, next) => {
   catch (e) { next(e); }
 });
 
+etlRouter.get('/resumen-periodo', async (req, res, next) => {
+  try {
+    const { desde, hasta } = req.query as { desde: string; hasta: string };
+    if (!desde || !hasta) { res.status(400).json({ message: 'Faltan parámetros' }); return; }
+    res.json(await etlService.getResumenPeriodo(desde, hasta));
+  } catch (e) { next(e); }
+});
+

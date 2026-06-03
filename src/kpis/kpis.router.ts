@@ -507,4 +507,51 @@ kpisRouter.get('/metas-ahorro-por-estatus', async (_req: Request, res: Response)
 kpisRouter.get('/metas-ahorro-progreso', async (_req: Request, res: Response) => {
   res.json(await kpisService.getMetasAhorroProgreso());
 });
+
+/**
+ * @swagger
+ * /api/v1/kpis/resumen-periodo:
+ *   get:
+ *     summary: Resumen de KPIs filtrado por período
+ *     tags: [KPIs]
+ *     security: [{ bearerAuth: [] }]
+ *     parameters:
+ *       - in: query
+ *         name: desde
+ *         required: true
+ *         schema: { type: string, format: date }
+ *       - in: query
+ *         name: hasta
+ *         required: true
+ *         schema: { type: string, format: date }
+ *     responses:
+ *       200:
+ *         description: KPIs del período solicitado
+ */
+
+kpisRouter.get('/resumen-periodo', async (req: Request, res: Response) => {
+  const { desde, hasta } = req.query as { desde: string; hasta: string };
+  if (!desde || !hasta) {
+    res.status(400).json({ message: 'Se requieren los parámetros desde y hasta' });
+    return;
+  }
+  res.json(await kpisService.getResumenPeriodo(desde, hasta));
+});
  
+kpisRouter.get('/clientes-nuevos', async (req: Request, res: Response) => {
+  const { desde, hasta } = req.query as { desde: string; hasta: string };
+  if (!desde || !hasta) { res.status(400).json({ message: 'Faltan parámetros' }); return; }
+  res.json(await kpisService.getClientesNuevosPeriodo(desde, hasta));
+});
+ 
+kpisRouter.get('/canal-periodo', async (req: Request, res: Response) => {
+  const { desde, hasta } = req.query as { desde: string; hasta: string };
+  if (!desde || !hasta) { res.status(400).json({ message: 'Faltan parámetros' }); return; }
+  res.json(await kpisService.getCanalPeriodo(desde, hasta));
+});
+ 
+kpisRouter.get('/prestamos-periodo', async (req: Request, res: Response) => {
+  const { desde, hasta } = req.query as { desde: string; hasta: string };
+  if (!desde || !hasta) { res.status(400).json({ message: 'Faltan parámetros' }); return; }
+  res.json(await kpisService.getPrestamosPeriodo(desde, hasta));
+});

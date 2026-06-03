@@ -172,4 +172,28 @@ export const kpisService = {
     return serialize(row);
   },
  
+  getResumenPeriodo: async (desde: string, hasta: string) => {
+    const d = new Date(desde + 'T00:00:00');
+    const h = new Date(hasta + 'T23:59:59');
+    return serialize(await kpisRepository.resumenPeriodo(d, h));
+  },
+ 
+  getClientesNuevosPeriodo: async (desde: string, hasta: string) => {
+    const d = new Date(desde + 'T00:00:00');
+    const h = new Date(hasta + 'T23:59:59');
+    return kpisRepository.clientesNuevosPeriodo(d, h);
+  },
+ 
+  getPrestamosPeriodo: async (desde: string, hasta: string) => {
+    const d = new Date(desde + 'T00:00:00');
+    const h = new Date(hasta + 'T23:59:59');
+    return serialize(await kpisRepository.prestamosPeriodo(d, h));
+  },
+ 
+  getCanalPeriodo: async (desde: string, hasta: string) => {
+    const d = new Date(desde + 'T00:00:00');
+    const h = new Date(hasta + 'T23:59:59');
+    return serialize(await kpisRepository.canalPeriodo(d, h));
+  },
+  
 };

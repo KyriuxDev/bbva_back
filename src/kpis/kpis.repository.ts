@@ -528,5 +528,100 @@ export const kpisRepository = {
       WHERE estatus IN ('Activa', 'En progreso')
         AND monto_objetivo > 0
     `,
+  resumenPeriodo: async (desde: Date, hasta: Date) => {
+    const [
+      cuentasActivas,
+      saldoCuentas,
+      transacciones,
+      montoTx,
+      fraudes,
+      cobros,
+      prestamos,
+      montoPrest,
+    ] = await Promise.all([
+      prisma.cuenta.count({
+        where: { estatus: 'Activa', fechaApertura: { lte: hasta } },
+      }),
+      prisma.cuenta.aggregate({
+        _sum: { saldo: true },
+        where: { estatus: 'Activa', fechaApertura: { lte: hasta } },
+      }),
+      prisma.transaccion.count({
+        where: { fecha: { gte: desde, lte: hasta } },
+      }),
+      prisma.transaccion.aggregate({
+        _sum: { monto: true },
+        where: { fecha: { gte: desde, lte: hasta } },
+      }),
+      prisma.transaccion.count({
+        where: { esFraudePotencial: true, fecha: { gte: desde, lte: hasta } },
+      }),
+      prisma.cobro.count({
+        where: { excedeLimite: true, fechaCobro: { gte: desde, lte: hasta } },
+      }),
+      prisma.prestamo.count({
+        where: {
+          estatusPrestamo: 'Vigente',
+          fechaOtorgamiento: { gte: desde, lte: hasta },
+        },
+      }),
+      prisma.prestamo.aggregate({
+        _sum: { saldoPrestamo: true },
+        where: {
+          estatusPrestamo: 'Vigente',
+          fechaOtorgamiento: { gte: desde, lte: hasta },
+        },
+      }),
+    ]);
  
+    // Total de clientes registrados hasta el final del período
+    const totalClientes = await prisma.cliente.count({
+      where: {
+        cuentas: { some: { fechaApertura: { lte: hasta } } },
+      },
+    });
+ 
+    return {
+      totalClientes,
+      cuentasActivas,
+      saldoTotalCuentas:  Number(saldoCuentas._sum.saldo    ?? 0),
+      transacciones,
+      montoTransacciones: Number(montoTx._sum.monto          ?? 0),
+      fraudesPotenciales: fraudes,
+      cobrosExcedidos:    cobros,
+      prestamosActivos:   prestamos,
+      montoPrestamos:     Number(montoPrest._sum.saldoPrestamo ?? 0),
+    };
+  },
+ 
+  clientesNuevosPeriodo: (desde: Date, hasta: Date) =>
+    prisma.cuenta
+      .groupBy({
+        by: ['idCliente'],
+        where: { fechaApertura: { gte: desde, lte: hasta } },
+      })
+      .then(rows => ({ nuevos: rows.length })),
+ 
+  prestamosPeriodo: (desde: Date, hasta: Date) =>
+    prisma.prestamo.groupBy({
+      by: ['tipoPrestamo'],
+      where: { fechaOtorgamiento: { gte: desde, lte: hasta } },
+      _count: { _all: true },
+      _sum:   { saldoPrestamo: true },
+    }),
+ 
+  canalPeriodo: (desde: Date, hasta: Date): Promise<{
+    canal: string; total: bigint; monto_total: Prisma.Decimal;
+  }[]> =>
+    prisma.$queryRaw`
+      SELECT canal,
+             COUNT(*)    AS total,
+             SUM(monto)  AS monto_total
+      FROM transacciones
+      WHERE canal IS NOT NULL
+        AND fecha >= ${desde}
+        AND fecha <= ${hasta}
+      GROUP BY canal
+      ORDER BY total DESC
+    `,
 };

@@ -75,4 +75,19 @@ export const etlRepository = {
       `,
     ]);
   },
+
+  resumenPeriodo: (desde: Date, hasta: Date) =>
+    prisma.$queryRaw<any[]>`
+      SELECT
+        COUNT(*) FILTER (WHERE es_fraude_potencial = true)                 AS total_fraudes,
+        SUM(monto) FILTER (WHERE es_fraude_potencial = true)               AS monto_total,
+        ROUND(
+          100.0 * COUNT(*) FILTER (WHERE es_fraude_potencial = true)
+          / NULLIF(COUNT(*), 0)::numeric, 2
+        )::float                                                            AS tasa_fraude
+      FROM transacciones
+      WHERE fecha >= ${desde}
+        AND fecha <= ${hasta}
+    `,
+    
 };
