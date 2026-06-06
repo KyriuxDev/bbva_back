@@ -12,7 +12,7 @@ services:
       - "5433:5432"
     volumes:
       - bbva_pgdata:/var/lib/postgresql/data
-      - ./docker/init:/docker-entrypoint-initdb.d   # carga el SQL al primer arranque
+      - ./docker/init:/docker-entrypoint-initdb.d
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres -d bbva_v2"]
       interval: 5s
@@ -36,8 +36,9 @@ services:
       APP_DESCRIPTION: API de KPIs y reportes
       APP_VERSION:     1.0.0
       OLLAMA_HOST:     http://host.docker.internal:11434
+      OLLAMA_MODEL:    llama3.1:8b
     extra_hosts:
-      - "host.docker.internal:host-gateway" 
+      - "host.docker.internal:host-gateway"
     ports:
       - "3000:3000"
 

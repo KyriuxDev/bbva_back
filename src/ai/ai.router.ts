@@ -32,5 +32,9 @@ aiRouter.post('/chat', async (req: Request, res: Response) => {
 aiRouter.get('/status', async (_req: Request, res: Response) => {
   const disponible = await aiService.healthCheck();
   const modelos    = disponible ? await aiService.listarModelos() : [];
-  res.json({ disponible, modelos });
+  res.json({ 
+    disponible, 
+    modelos,
+    modelo_activo: process.env.OLLAMA_MODEL ?? 'llama3.1:8b'
+  });
 });
