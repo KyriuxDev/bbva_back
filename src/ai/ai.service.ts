@@ -479,7 +479,7 @@ export const aiService = {
         model: MODELO,
         messages: [
           { role: 'system' as const, content: sistema },
-          ...historial.slice(-4).map(h => ({
+          ...historial.slice(-2).map(h => ({
             role:    h.role as 'user' | 'assistant',
             content: h.content,
           })),
@@ -487,8 +487,8 @@ export const aiService = {
         ],
         options: {
           temperature: 0.1,
-          num_predict: 200,
-          num_ctx:     3072,
+          num_predict: 512,
+          num_ctx:     6144,
         },
       });
       console.log(`✅ Ollama respondió en ${((Date.now()-t0)/1000).toFixed(1)}s`);
